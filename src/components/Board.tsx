@@ -6,8 +6,12 @@ import { DbContext } from '../contexts/DbContext'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 
-const Board = () => {
-  const [chcolor, setChcolor] = useState(color.white)
+type Props = {
+  chclr: color
+}
+
+const Board = ({chclr}: Props) => {
+  const [chcolor, setChcolor] = useState(chclr)
   const navigation = useNavigation()
 
   const getCondNumRange = (clr: color = chcolor) => {
@@ -46,6 +50,13 @@ const Board = () => {
 
   useEffect(() => {
     moveFigureRef!.current = moveFig
+  },[])
+
+  useEffect(() => {
+    if(figures.length===0) {
+      getReady()
+      getFigures()
+    }
   },[])
 
 

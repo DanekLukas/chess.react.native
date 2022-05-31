@@ -1,11 +1,11 @@
 import { createContext, MutableRefObject } from 'react'
-import { TFigure } from '../utils'
+import { color, TFigure } from '../utils'
 
 type State = {
   chooseNickName: (name: string) => string | undefined
   createOffer: (peer: string, me: string) => void
-  shareSendMove: (move: string) => void
-  setRefNavigate: (navigate: ()=>void) => void
+  shareSendMove: (move: string) => boolean
+  setRefNavigate: (navigate: (chkclr: color)=>void) => void
   acceptSent: (to: string, by:string) => void
   peers: string[]
   socket: WebSocket | undefined
@@ -20,7 +20,7 @@ type State = {
 export const ConnectionContext = createContext<State>({
   chooseNickName: () => undefined,
   createOffer: () => undefined,
-  shareSendMove: () => undefined,
+  shareSendMove: () => false,
   setRefNavigate: () => undefined,
   acceptSent: () => undefined,
   peers: [],

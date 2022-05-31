@@ -1,13 +1,14 @@
 import { ConnectionContext } from './ConnectionContext'
-import { useEffect, useRef, useState } from 'react'
-import { position, TFigure } from '../utils'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { color, TFigure } from '../utils'
+import { MessagesContext } from './MessagesContext'
 
 type Props = {
   children: React.ReactNode
 }
 
 export interface Navigate {
-  (): void;
+  (color:color): void;
 }
 
 const ConnectionProvider = ({ children }: Props) => {
@@ -15,12 +16,16 @@ const ConnectionProvider = ({ children }: Props) => {
   const nameRef = useRef<string>('')
   const sendToRef = useRef<string>('')
   const navigateRef = useRef<Navigate>()
-  const roomRef = useRef<string>('')
+  const roomRef = useRef<string>()
+  const lastId = useRef(0)
+  const intervalId = useRef<ReturnType<typeof setInterval>>()
   const moveFigureRef = useRef<(
     fig: { horizontal: string, vertical: string, fig: TFigure }[],
     fromNet: boolean)=>void>()
   const [peers, setPeers] = useState<string[]>([])
 
+  const { addMessage } = useContext(MessagesContext)
+  
   const socketSend = (message: string) => {
     if(!socketRef.current || socketRef.current.readyState > 1){
       initSocket()
@@ -74,7 +79,7 @@ const ConnectionProvider = ({ children }: Props) => {
           case 'offer':
             sendToRef.current = JSON.parse(event.data)['offeredBy']
             roomRef.current = JSON.parse(event.data)['room']
-            navigateRef.current!()
+            navigateRef.current!( value.do === 'accept'? color.white : color.black )
             break
           case 'move':
             const move = JSON.parse(JSON.parse(event.data)['move'])
@@ -83,6 +88,14 @@ const ConnectionProvider = ({ children }: Props) => {
             break
           case 'ping':
             socketSend(JSON.stringify({ do: 'pong' }))
+            break
+          case 'confirm':
+            const id = JSON.parse(JSON.parse(event.data)['id'])
+            if(id === lastId.current) {
+              clearInterval(intervalId.current)
+              intervalId.current = undefined
+              lastId.current++
+            }
             break
         }
       }
@@ -97,17 +110,28 @@ const ConnectionProvider = ({ children }: Props) => {
         with: me,
       })
     )
-    navigateRef.current!()
+    navigateRef.current!(color.white)
   }
 
   const shareSendMove = (move: string) => {
-    socketSend(
-      JSON.stringify({
-        do: 'move',
-        room: roomRef.current,
-        move: move,
-      })
-    )
+    if(intervalId.current) 
+      return false
+
+    if(!roomRef.current || roomRef.current.length<16) {
+      addMessage('Spojení přerušeno')
+      return false
+    }
+
+    intervalId.current = setInterval(() => {
+      socketSend(
+        JSON.stringify({
+          do: 'move',
+          room: roomRef.current,
+          move: move,
+          id: lastId.current,
+        })
+    )}, 200)
+    return true
   }
 
   const acceptSent = (to: string, by:string) => {
@@ -121,7 +145,7 @@ const ConnectionProvider = ({ children }: Props) => {
     )
   }
 
- const setRefNavigate = (navigate: () => void) => {
+ const setRefNavigate = (navigate: (color:color) => void) => {
     navigateRef.current = navigate
   }
 

@@ -10,6 +10,7 @@ import { ConnectionContext } from '../contexts/ConnectionContext'
 import { MessagesContext } from '../contexts/MessagesContext'
 import { useContext, useRef, useState, useEffect } from 'react'
 import { RootStackScreenProps } from '../types'
+import { color } from '../utils'
 
 
 const Homepage = ({ navigation }: RootStackScreenProps<'Board'>) => {
@@ -19,7 +20,7 @@ const Homepage = ({ navigation }: RootStackScreenProps<'Board'>) => {
   const [name, setName] = useState('')
 
   useEffect(() => {
-    setRefNavigate(() => { navigation.navigate('Board') })
+    setRefNavigate((chclr: color) => { navigation.navigate('Board', {chclr: chclr}) })
   },[])
   
   const { messages } = useContext(MessagesContext)

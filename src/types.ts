@@ -4,6 +4,7 @@
  */
 
  import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { color } from './utils';
  
  declare global {
    namespace ReactNavigation {
@@ -13,7 +14,7 @@
  
  export type RootStackParamList = {
   ChessLogin: undefined;
-  Board: undefined;
+  Board: {chclr: color};
  }
  
  export type RootStackScreenProps<Screen extends keyof RootStackParamList> = NativeStackScreenProps<
