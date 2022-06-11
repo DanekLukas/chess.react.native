@@ -25,12 +25,14 @@ const ConnectionProvider = ({ children }: Props) => {
   const [peers, setPeers] = useState<string[]>([])
 
   const { addMessage } = useContext(MessagesContext)
-  
+  let recieved = true
+  let intr: ReturnType<typeof setInterval> | undefined = undefined
+
   const socketSend = (message: string) => {
     if(!socketRef.current || socketRef.current.readyState > 1){
       initSocket()
       socketRef.current?.addEventListener('open', event => {
-        socketRef.current?.send(message)
+        socketSend(message)
       })
     }
 
@@ -40,8 +42,8 @@ const ConnectionProvider = ({ children }: Props) => {
 
   const chooseNickName = (name: string) => {
     if (peers && peers.includes(name)) return undefined
-    socketSend(JSON.stringify({ do: 'nick', name: name }))
-    nameRef.current = name
+    socketSend(JSON.stringify({ do: 'nick', name: name, usePing: true }))
+    nameRef.current = name    
     return name
   }
 
@@ -87,7 +89,13 @@ const ConnectionProvider = ({ children }: Props) => {
             moveFigureRef.current!(figs, true)
             break
           case 'ping':
+            recieved = true
             socketSend(JSON.stringify({ do: 'pong' }))
+            break
+          case 'ping-start':
+            if(intr === undefined) {
+              startWaiting()
+            }  
             break
           case 'confirm':
             const id = JSON.parse(JSON.parse(event.data)['id'])
@@ -100,7 +108,7 @@ const ConnectionProvider = ({ children }: Props) => {
         }
       }
     }
-  }, [socketRef])
+  }, [socketRef.current])
 
   const createOffer = (peer: string, me: string) => {
     socketSend(
@@ -147,6 +155,24 @@ const ConnectionProvider = ({ children }: Props) => {
 
  const setRefNavigate = (navigate: (color:color) => void) => {
     navigateRef.current = navigate
+  }
+
+  const startWaiting = () => {
+    intr = setInterval( (rec) => {
+      if(rec) {
+        recieved = false
+      } else {
+        recieved = true
+        socketRef.current?.close()
+        socketSend(
+          JSON.stringify({
+            do: 'reconnect',
+            room: roomRef.current,
+            name: nameRef.current,
+            id: lastId.current,
+          }))
+        }
+      }, 5000, recieved)
   }
 
   return (

@@ -48,8 +48,12 @@ const Homepage = ({ navigation }: RootStackScreenProps<'Board'>) => {
           </View>
         </View>
       )}
-      {peers &&
-        peers.map((peer, index) => (
+      {(() => {
+        const ret: Array<JSX.Element> = [];
+       (peers &&
+        peers.forEach((peer, index) => (
+          peer &&
+          ret.push(
           <View key={index}>
             {peer === name ? (
               <Text style={{ textAlign: 'center' }}>{name}</Text>
@@ -64,9 +68,12 @@ const Homepage = ({ navigation }: RootStackScreenProps<'Board'>) => {
                 title={peer}
               />
               </View>
-            )}
+          )}
           </View>
-        ))}
+          )
+          )))
+        return ret.map((itm: JSX.Element) => itm)
+        })()}
       <View>
         {messages.map((message, index) => (
           <Text key={index}>{message}</Text>
